@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WhatTrace | Futuristic Chat Analyzer</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script
+    src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/vanilla-tilt/1.8.0/vanilla-tilt.min.js"></script>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Outfit:wght@200;300;400;500;700&family=Space+Grotesk:wght@300;400;600&display=swap"
+    rel="stylesheet">
+</head>
+
+<body>
+
+  <!-- Ambient Background -->
+  <div class="noise-overlay"></div>
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="orb orb-3"></div>
+
+  <!-- Main Interface -->
+  <div class="glass-container" data-tilt data-tilt-max="2" data-tilt-speed="400" data-tilt-glare
+    data-tilt-max-glare="0.1">
+
+    <!-- Header -->
+    <header class="holographic-header">
+      <div class="brand">
+        <span class="logo-icon">💠</span>
+        <span class="logo-text">WhatTrace</span>
+      </div>
+      <div class="version-badge">V.0.1</div>
+    </header>
+
+    <!-- Content -->
+    <main class="content-area">
+
+      <!-- Upload Portal -->
+      <div id="dropZone" class="upload-view">
+        <div class="portal-ring"></div>
+        <div class="upload-core">
+          <button class="btn-neon-circle">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 19V5M5 12l7-7 7 7" />
+            </svg>
+          </button>
+          <div class="upload-text">INITIALIZE UPLOAD</div>
+          <input type="file" id="fileInput" accept=".txt" class="file-input-hidden">
+        </div>
+        <div class="drag-hint">DROP_FILE_TO_ENGAGE</div>
+      </div>
+
+      <!-- Dashboard -->
+      <div id="resultsSection" class="dashboard-view hidden">
+
+        <div class="dashboard-head">
+          <h1 id="chatTitle">TARGET_CHAT</h1>
+          <p id="dateRange" class="glow-text">-- / -- / --</p>
+        </div>
+
+        <!-- Stats HUD -->
+        <div class="hud-stats">
+          <div class="hud-card"><span class="hud-label">TOTAL_MSGS</span><span class="hud-value"
+              id="totalMessages">0</span></div>
+          <div class="hud-card"><span class="hud-label">TIMELINE_DAYS</span><span class="hud-value"
+              id="totalDays">0</span></div>
+          <div class="hud-card"><span class="hud-label">DAILY_FLUX</span><span class="hud-value"
+              id="avgMessagesPerDay">0</span></div>
+          <div class="hud-card"><span class="hud-label">ENTITIES</span><span class="hud-value"
+              id="participants">0</span></div>
+        </div>
+
+        <!-- Charts Grid -->
+        <div class="charts-grid">
+          <div class="glass-panel wide">
+            <h3>HOURLY_ACTIVITY_MATRIX</h3><canvas id="hourlyActivityChart"></canvas>
+          </div>
+          <div class="glass-panel tall">
+            <h3>KEYWORD_CLUSTERS</h3><canvas id="topWordsChart"></canvas>
+          </div>
+          <div class="glass-panel">
+            <h3>MSG_DISTRIBUTION</h3><canvas id="messageCountChart"></canvas>
+          </div>
+          <div class="glass-panel">
+            <h3>RESPONSE_LATENCY</h3>
+            <div id="avgResponseTime" class="big-metric">--</div><canvas id="responseTimeChart"></canvas>
+          </div>
+          <div class="glass-panel">
+            <h3>EMOJI_SENTIMENT</h3><canvas id="topEmojisChart"></canvas>
+          </div>
+          <div class="glass-panel">
+            <h3>DAILY_RHYTHM</h3><canvas id="dailyActivityChart"></canvas>
+          </div>
+          <div class="glass-panel wide">
+            <h3>MONTHLY_TRAJECTORY</h3><canvas id="monthlyTrendChart"></canvas>
+          </div>
+          <div class="glass-panel">
+            <h3>COMM_GAPS</h3>
+            <div id="conversationGaps"></div>
+          </div>
+          <div class="glass-panel">
+            <h3>STREAK_ANALYSIS</h3>
+            <canvas id="streaksChart"></canvas>
+          </div>
+          <div class="glass-panel">
+            <h3>INITIATION_PROTOCOL</h3>
+            <canvas id="initiationChart"></canvas>
+          </div>
+          <div class="glass-panel">
+            <h3>TEXT_ANALYSIS</h3>
+            <canvas id="messageLengthChart"></canvas>
+          </div>
+          <div class="glass-panel info-panel">
+            <h3>PUNCTUATION</h3>
+            <div id="punctuationAnalysis"></div>
+          </div>
+          <div class="glass-panel tall">
+            <h3>ACTIVITY_PERSONAS</h3>
+            <div id="activityPersonas"></div>
+          </div>
+          <!-- Hidden elements for compatibility -->
+          <canvas id="mediaSharingChart" class="hidden"></canvas>
+          <div id="peakHour" class="hidden"></div>
+          <div id="peakDay" class="hidden"></div>
+        </div>
+
+      </div>
+
+    </main>
+  </div>
+
+  <!-- Loader -->
+  <div id="loader" class="loader hidden">
+    <div class="scanner-line"></div>
+    <div class="loader-text">SYSTEM_PROCESSING...</div>
+  </div>
+
+  <div id="errorMessage" class="error-toast hidden"></div>
+
+  <script type="module" src="app.js"></script>
+</body>
+
+</html>
