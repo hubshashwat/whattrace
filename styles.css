@@ -31,15 +31,17 @@ body {
     radial-gradient(circle at 80% 80%, #1a0f30 0%, transparent 40%);
   color: var(--text-main);
   height: 100vh;
-  overflow-x: hidden;
-  overflow-y: auto;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  width: 100vw;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+  position: fixed;
 }
 
 html {
-  overflow-x: hidden;
+  overflow: hidden;
+  height: 100%;
+  width: 100%;
 }
 
 /* Noise Texture */
@@ -168,8 +170,16 @@ html {
 .content-area {
   flex: 1;
   overflow-y: auto;
-  padding: 2rem;
+  overflow-x: hidden;
+  padding: 1rem;
   position: relative;
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (min-width: 769px) {
+  .content-area {
+    padding: 2rem;
+  }
 }
 
 /* Upload Portal */
@@ -195,9 +205,11 @@ html {
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   position: relative;
   flex: 0 0 auto;
   min-width: 350px;
+  min-height: 350px;
 }
 
 .portal-ring {
@@ -206,6 +218,9 @@ html {
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 50%;
   position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   animation: spinPortal 20s linear infinite;
 }
 
@@ -222,7 +237,7 @@ html {
 
 @keyframes spinPortal {
   to {
-    transform: rotate(360deg);
+    transform: translate(-50%, -50%) rotate(360deg);
   }
 }
 
@@ -438,16 +453,20 @@ html {
   border-radius: 12px;
   padding: 1.5rem;
   padding-bottom: 2.5rem;
-  /* Extra space for x-axis labels */
+  margin-bottom: 2rem;
   position: relative;
-  overflow: visible;
-  /* Changed from hidden to allow labels to show */
+  overflow: hidden;
   backdrop-filter: blur(10px);
   min-height: 350px;
-  /* Increased for better chart visibility */
   max-height: 550px;
-  /* Increased cap */
   height: auto;
+}
+
+@media (max-width: 768px) {
+  .glass-panel {
+    margin-bottom: 2.5rem;
+    overflow-y: auto;
+  }
 }
 
 .glass-panel::after {
@@ -470,11 +489,15 @@ html {
   display: flex;
   align-items: center;
   gap: 10px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  line-height: 1.4;
 }
 
 .glass-panel h3::before {
   content: '>';
   color: white;
+  flex-shrink: 0;
 }
 
 .info-panel {
@@ -793,6 +816,7 @@ html {
 
   .charts-grid {
     grid-template-columns: 1fr;
+    gap: 2rem;
   }
 
   .wide,

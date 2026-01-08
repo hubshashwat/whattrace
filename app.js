@@ -620,17 +620,27 @@ class WhatsAppAnalyzerApp {
         const container = document.getElementById('ghostPeriodsAnalysis');
         if (!container) return;
 
-        const html = Object.entries(ghostPeriods)
-            .map(([person, data]) => {
-                if (data.totalGhosts === 0) {
-                    return `
-                        <div class="ghost-card">
-                            <div class="ghost-name">${person}</div>
-                            <div class="no-ghost-message">👻 No ghosting detected!</div>
-                        </div>
-                    `;
-                }
+        // Check if there's any ghosting data at all
+        const hasAnyGhosting = Object.values(ghostPeriods).some(data => data.totalGhosts > 0);
 
+        // If no one has ghosted, hide the entire panel
+        if (!hasAnyGhosting) {
+            const panel = container.closest('.glass-panel');
+            if (panel) {
+                panel.style.display = 'none';
+            }
+            return;
+        }
+
+        // Show the panel if it was hidden
+        const panel = container.closest('.glass-panel');
+        if (panel) {
+            panel.style.display = '';
+        }
+
+        const html = Object.entries(ghostPeriods)
+            .filter(([person, data]) => data.totalGhosts > 0) // Only show participants with ghosting
+            .map(([person, data]) => {
                 const longestGhostDuration = formatters.formatDuration(data.longestGhost);
                 const avgGhostDuration = formatters.formatDuration(data.averageGhostDuration);
 
