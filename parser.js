@@ -2,10 +2,13 @@
 
 export class WhatsAppParser {
     constructor() {
-        // Android WhatsApp format: DD/MM/YYYY, HH:MM - Sender: Message
-        // Also supports: DD/MM/YY, H:MM AM/PM - Sender: Message
-        this.messagePattern = /^(\d{1,2}\/\d{1,2}\/\d{2,4}),?\s+(\d{1,2}:\d{2}(?:\s?[AP]M)?)\s*[-–]\s*([^:]+?):\s*(.*)$/;
-        this.systemMessagePattern = /^(\d{1,2}\/\d{1,2}\/\d{2,4}),?\s+(\d{1,2}:\d{2}(?:\s?[AP]M)?)\s*[-–]\s*(.*)$/;
+        // Support both Android and iPhone formats:
+        // Android: DD/MM/YYYY, HH:MM - Sender: Message
+        // iPhone: [DD/MM/YYYY, HH:MM:SS AM/PM] Sender: Message
+
+        // Combined pattern for both formats
+        this.messagePattern = /^(?:\[)?(\d{1,2}\/\d{1,2}\/\d{2,4}),?\s+(\d{1,2}:\d{2}(?::\d{2})?(?:\s?[AP]M)?)(?:\])?\s*[-–]?\s*([^:]+?):\s*(.*)$/;
+        this.systemMessagePattern = /^(?:\[)?(\d{1,2}\/\d{1,2}\/\d{2,4}),?\s+(\d{1,2}:\d{2}(?::\d{2})?(?:\s?[AP]M)?)(?:\])?\s*[-–]?\s*(.*)$/;
     }
 
     /**
@@ -162,14 +165,16 @@ export class WhatsAppParser {
 
         const fullYear = year < 100 ? 2000 + year : year;
 
-        // Handle time with or without AM/PM
-        let hours, minutes;
-        const timeMatch = timeStr.match(/(\d{1,2}):(\d{2})(?:\s?([AP]M))?/i);
+        // Handle time with or without AM/PM and with or without seconds
+        // Supports: HH:MM, HH:MM AM/PM, HH:MM:SS, HH:MM:SS AM/PM
+        let hours, minutes, seconds = 0;
+        const timeMatch = timeStr.match(/(\d{1,2}):(\d{2})(?::(\d{2}))?(?:\s?([AP]M))?/i);
 
         if (timeMatch) {
             hours = parseInt(timeMatch[1]);
             minutes = parseInt(timeMatch[2]);
-            const meridiem = timeMatch[3];
+            seconds = timeMatch[3] ? parseInt(timeMatch[3]) : 0; // iPhone includes seconds
+            const meridiem = timeMatch[4];
 
             if (meridiem) {
                 // 12-hour format
@@ -180,7 +185,7 @@ export class WhatsAppParser {
             [hours, minutes] = timeStr.split(':').map(Number);
         }
 
-        return new Date(fullYear, month - 1, day, hours, minutes);
+        return new Date(fullYear, month - 1, day, hours, minutes, seconds);
     }
 
     /**
