@@ -77,8 +77,11 @@ class WhatsAppAnalyzerApp {
 
     async processFile(file) {
         // Validate file type
-        if (!file.name.endsWith('.txt')) {
-            this.showError('Please upload a .txt file (WhatsApp chat export)');
+        const isTextFile = file.name.endsWith('.txt');
+        const isZipFile = file.name.endsWith('.zip');
+
+        if (!isTextFile && !isZipFile) {
+            this.showError('Please upload a .txt or .zip file (WhatsApp chat export)');
             return;
         }
 
@@ -89,8 +92,15 @@ class WhatsAppAnalyzerApp {
         this.destroyAllCharts();
 
         try {
-            // Read file
-            const text = await file.text();
+            let text;
+
+            if (isZipFile) {
+                // Handle ZIP file - extract .txt file
+                text = await this.extractTextFromZip(file);
+            } else {
+                // Handle regular .txt file
+                text = await file.text();
+            }
 
             // Parse chat
             this.parsedData = parser.parse(text);
@@ -121,6 +131,42 @@ class WhatsAppAnalyzerApp {
             this.showError(`Error processing file: ${error.message}`);
         } finally {
             this.hideLoading();
+        }
+    }
+
+    async extractTextFromZip(zipFile) {
+        // Dynamically import JSZip
+        const JSZip = (await import('https://cdn.jsdelivr.net/npm/jszip@3.10.1/+esm')).default;
+
+        try {
+            const zip = await JSZip.loadAsync(zipFile);
+
+            // Find .txt file in the zip
+            let txtFile = null;
+            let txtFileName = null;
+
+            zip.forEach((relativePath, file) => {
+                if (relativePath.endsWith('.txt') && !file.dir) {
+                    txtFile = file;
+                    txtFileName = relativePath;
+                }
+            });
+
+            if (!txtFile) {
+                throw new Error('No .txt file found in the ZIP archive. Please ensure your WhatsApp export contains a chat file.');
+            }
+
+            console.log(`Found chat file: ${txtFileName}`);
+
+            // Extract and read the text content
+            const text = await txtFile.async('text');
+            return text;
+
+        } catch (error) {
+            if (error.message.includes('No .txt file')) {
+                throw error;
+            }
+            throw new Error('Failed to extract ZIP file. Please ensure it\'s a valid WhatsApp export.');
         }
     }
 
@@ -212,8 +258,20 @@ class WhatsAppAnalyzerApp {
             );
         }
 
+        // Individual response times by participant
+        const individualRtCtx = document.getElementById('individualResponseTimeChart');
+        if (individualRtCtx) {
+            this.charts.individualResponseTime = this.chartBuilder.createIndividualResponseTimeChart(
+                individualRtCtx,
+                patterns.responseTime.byParticipant
+            );
+        }
+
         // Conversation initiators
         this.renderConversationInitiators(patterns.conversationInitiators);
+
+        // Best time to message
+        this.renderBestTimeToMessage(patterns.bestTimeToMessage);
     }
 
     renderContentAnalysis(content) {
@@ -278,6 +336,7 @@ class WhatsAppAnalyzerApp {
         this.renderActivityPersonas(temporal.activityPersona);
     }
 
+
     renderEngagementMetrics(engagement) {
         // Media sharing
         const mediaCtx = document.getElementById('mediaSharingChart');
@@ -293,7 +352,13 @@ class WhatsAppAnalyzerApp {
 
         // Conversation streaks
         this.renderConversationStreaks(engagement.conversationStreaks);
+
+        // New conversation dynamics
+        this.renderDoubleTexting(engagement.doubleTextingPatterns);
+        this.renderGhostPeriods(engagement.ghostPeriods);
+        this.renderConversationEnders(engagement.conversationEnders);
     }
+
 
     // Helper rendering methods
     updateStatCard(id, value) {
@@ -421,6 +486,56 @@ class WhatsAppAnalyzerApp {
         container.innerHTML = html;
     }
 
+    renderBestTimeToMessage(bestTimes) {
+        const container = document.getElementById('bestTimeToMessage');
+        if (!container) return;
+
+        const html = Object.entries(bestTimes)
+            .map(([person, data]) => {
+                if (!data.bestHour && data.top3Hours.length === 0) {
+                    return `
+                        <div class="best-time-card">
+                            <div class="best-time-name">${person}</div>
+                            <div class="no-data-message">Insufficient data for analysis</div>
+                        </div>
+                    `;
+                }
+
+                const top3HTML = data.top3Hours.map((slot, index) => {
+                    const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : '🥉';
+                    const responseTime = formatters.formatDuration(slot.averageResponseTime);
+
+                    return `
+                        <div class="time-slot-row ${index === 0 ? 'best-slot' : ''}">
+                            <div class="slot-rank">${medal}</div>
+                            <div class="slot-time">${slot.timeRange}</div>
+                            <div class="slot-response">${responseTime}</div>
+                            <div class="slot-samples">${slot.sampleSize} samples</div>
+                        </div>
+                    `;
+                }).join('');
+
+                return `
+                    <div class="best-time-card">
+                        <div class="best-time-header">
+                            <div class="best-time-name">${person}</div>
+                            ${data.bestHour !== null ? `
+                                <div class="best-time-badge">
+                                    Best: ${data.bestHour}:00 - ${data.bestHour + 1}:00
+                                </div>
+                            ` : ''}
+                        </div>
+                        <div class="best-time-slots">
+                            ${top3HTML}
+                        </div>
+                    </div>
+                `;
+            })
+            .join('');
+
+        container.innerHTML = html;
+    }
+
     renderConversationGaps(gaps) {
         const container = document.getElementById('conversationGaps');
         if (!container || !gaps.longestGap) return;
@@ -457,6 +572,108 @@ class WhatsAppAnalyzerApp {
             this.charts.streaks = this.chartBuilder.createStreaksChart(ctx, streaks);
         }
     }
+
+    renderDoubleTexting(patterns) {
+        const container = document.getElementById('doubleTextingAnalysis');
+        if (!container) return;
+
+        const html = Object.entries(patterns)
+            .map(([person, data]) => {
+                const totalInstances = data.totalInstances;
+
+                return `
+                    <div class="double-text-card">
+                        <div class="dt-header">
+                            <span class="dt-name">${person}</span>
+                            <span class="dt-badge">${totalInstances} instances</span>
+                        </div>
+                        <div class="dt-stats">
+                            <div class="dt-stat">
+                                <span class="dt-label">2x</span>
+                                <span class="dt-value">${data.doubleTexts}</span>
+                            </div>
+                            <div class="dt-stat">
+                                <span class="dt-label">3x</span>
+                                <span class="dt-value">${data.tripleTexts}</span>
+                            </div>
+                            <div class="dt-stat">
+                                <span class="dt-label">4x+</span>
+                                <span class="dt-value">${data.quadPlusTexts}</span>
+                            </div>
+                            <div class="dt-stat highlight">
+                                <span class="dt-label">Max Streak</span>
+                                <span class="dt-value">${data.longestStreak}</span>
+                            </div>
+                        </div>
+                        <div class="dt-percentage">
+                            ${data.percentage}% of messages are consecutive
+                        </div>
+                    </div>
+                `;
+            })
+            .join('');
+
+        container.innerHTML = html;
+    }
+
+    renderGhostPeriods(ghostPeriods) {
+        const container = document.getElementById('ghostPeriodsAnalysis');
+        if (!container) return;
+
+        const html = Object.entries(ghostPeriods)
+            .map(([person, data]) => {
+                if (data.totalGhosts === 0) {
+                    return `
+                        <div class="ghost-card">
+                            <div class="ghost-name">${person}</div>
+                            <div class="no-ghost-message">👻 No ghosting detected!</div>
+                        </div>
+                    `;
+                }
+
+                const longestGhostDuration = formatters.formatDuration(data.longestGhost);
+                const avgGhostDuration = formatters.formatDuration(data.averageGhostDuration);
+
+                return `
+                    <div class="ghost-card">
+                        <div class="ghost-header">
+                            <span class="ghost-name">${person}</span>
+                            <span class="ghost-count">👻 ${data.totalGhosts} ghosts</span>
+                        </div>
+                        <div class="ghost-metrics">
+                            <div class="ghost-metric">
+                                <span class="metric-label">Longest Ghost</span>
+                                <span class="metric-value danger">${longestGhostDuration}</span>
+                            </div>
+                            <div class="ghost-metric">
+                                <span class="metric-label">Average Ghost</span>
+                                <span class="metric-value">${avgGhostDuration}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            })
+            .join('');
+
+        container.innerHTML = html;
+    }
+
+    renderConversationEnders(endersData) {
+        const ctx = document.getElementById('conversationEndersChart');
+        if (!ctx) return;
+
+        const participants = Object.keys(endersData.byParticipant);
+        const counts = participants.map(p => endersData.byParticipant[p].count);
+        const percentages = participants.map(p => endersData.byParticipant[p].percentage);
+
+        this.charts.conversationEnders = this.chartBuilder.createConversationEndersChart(
+            ctx,
+            participants,
+            counts,
+            percentages
+        );
+    }
+
 
     destroyAllCharts() {
         // Destroy all existing charts to prevent memory leaks

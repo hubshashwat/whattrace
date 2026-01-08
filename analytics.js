@@ -17,21 +17,28 @@ export class WhatsAppAnalytics {
      */
 
     getMessagingPatterns() {
+        const responseTime = this.calculateResponseTimes();
         return {
-            responseTime: this.calculateResponseTimes(),
+            responseTime: responseTime,
             messageFrequency: this.getMessageFrequency(),
             conversationInitiators: this.getConversationInitiators(),
             messageCountByParticipant: this.getMessageCountByParticipant(),
-            averageMessagesPerConversation: this.getAverageMessagesPerConversation()
+            averageMessagesPerConversation: this.getAverageMessagesPerConversation(),
+            bestTimeToMessage: this.getBestTimeToMessage(responseTime.byHourBySender)
         };
     }
 
     calculateResponseTimes() {
         const responseTimes = [];
         const responseTimesBySender = {};
+        const responseTimesByHourBySender = {};
 
         this.participants.forEach(p => {
             responseTimesBySender[p] = [];
+            responseTimesByHourBySender[p] = {};
+            for (let h = 0; h < 24; h++) {
+                responseTimesByHourBySender[p][h] = [];
+            }
         });
 
         for (let i = 1; i < this.userMessages.length; i++) {
@@ -43,6 +50,10 @@ export class WhatsAppAnalytics {
                 const timeDiff = currentMsg.timestamp - previousMsg.timestamp;
                 responseTimes.push(timeDiff);
                 responseTimesBySender[currentMsg.sender].push(timeDiff);
+
+                // Track response time by hour when the message was sent
+                const hour = previousMsg.metadata.hour;
+                responseTimesByHourBySender[currentMsg.sender][hour].push(timeDiff);
             }
         }
 
@@ -69,7 +80,8 @@ export class WhatsAppAnalytics {
                 average: averageByParticipant,
                 median: medianByParticipant
             },
-            distribution: this.getResponseTimeDistribution(responseTimes)
+            distribution: this.getResponseTimeDistribution(responseTimes),
+            byHourBySender: responseTimesByHourBySender
         };
     }
 
@@ -180,6 +192,52 @@ export class WhatsAppAnalytics {
         return (this.userMessages.length / conversationCount).toFixed(1);
     }
 
+    getBestTimeToMessage(responseTimesByHourBySender) {
+        const bestTimes = {};
+
+        this.participants.forEach(p => {
+            const hourlyAverages = {};
+            let fastestHour = null;
+            let fastestTime = Infinity;
+
+            // Calculate average response time for each hour
+            for (let hour = 0; hour < 24; hour++) {
+                const times = responseTimesByHourBySender[p][hour];
+                if (times && times.length >= 3) { // Require at least 3 responses for reliability
+                    const avgTime = stats.mean(times);
+                    hourlyAverages[hour] = {
+                        average: avgTime,
+                        count: times.length
+                    };
+
+                    if (avgTime < fastestTime) {
+                        fastestTime = avgTime;
+                        fastestHour = hour;
+                    }
+                }
+            }
+
+            // Find top 3 best times
+            const sortedHours = Object.entries(hourlyAverages)
+                .sort((a, b) => a[1].average - b[1].average)
+                .slice(0, 3);
+
+            bestTimes[p] = {
+                bestHour: fastestHour,
+                bestTime: fastestTime,
+                hourlyAverages: hourlyAverages,
+                top3Hours: sortedHours.map(([hour, data]) => ({
+                    hour: parseInt(hour),
+                    timeRange: `${hour}:00 - ${parseInt(hour) + 1}:00`,
+                    averageResponseTime: data.average,
+                    sampleSize: data.count
+                }))
+            };
+        });
+
+        return bestTimes;
+    }
+
     /**
      * CONTENT ANALYSIS
      */
@@ -238,9 +296,7 @@ export class WhatsAppAnalytics {
             byParticipant[p] = {
                 averageLength: stats.mean(participantLengths),
                 medianLength: stats.median(participantLengths),
-                averageWords: stats.mean(participantWordCounts),
-                longestMessage: Math.max(...participantLengths),
-                shortestMessage: Math.min(...participantLengths)
+                averageWords: stats.mean(participantWordCounts)
             };
         });
 
@@ -249,8 +305,6 @@ export class WhatsAppAnalytics {
                 averageLength: stats.mean(lengths),
                 medianLength: stats.median(lengths),
                 averageWords: stats.mean(wordCounts),
-                longestMessage: Math.max(...lengths),
-                shortestMessage: Math.min(...lengths),
                 stdDeviation: stats.standardDeviation(lengths)
             },
             byParticipant
@@ -421,7 +475,10 @@ export class WhatsAppAnalytics {
             deletedMessagePatterns: this.getDeletedMessagePatterns(),
             conversationGaps: this.getConversationGaps(),
             conversationStreaks: this.getConversationStreaks(),
-            urlSharingStats: this.getUrlSharingStats()
+            urlSharingStats: this.getUrlSharingStats(),
+            doubleTextingPatterns: this.getDoubleTextingPatterns(),
+            ghostPeriods: this.getGhostPeriods(),
+            conversationEnders: this.getConversationEnders()
         };
     }
 
@@ -553,6 +610,172 @@ export class WhatsAppAnalytics {
         });
 
         return stats;
+    }
+
+    /**
+     * CONVERSATION DYNAMICS
+     */
+
+    getDoubleTextingPatterns() {
+        const patterns = {};
+
+        this.participants.forEach(p => {
+            patterns[p] = {
+                doubleTexts: 0,
+                tripleTexts: 0,
+                quadPlusTexts: 0,
+                longestStreak: 0,
+                totalConsecutiveMessages: 0
+            };
+        });
+
+        let currentSender = null;
+        let consecutiveCount = 0;
+
+        this.userMessages.forEach((msg, index) => {
+            if (msg.sender === currentSender) {
+                consecutiveCount++;
+            } else {
+                // Record the previous streak
+                if (currentSender && consecutiveCount > 1) {
+                    patterns[currentSender].totalConsecutiveMessages += consecutiveCount;
+
+                    if (consecutiveCount === 2) patterns[currentSender].doubleTexts++;
+                    else if (consecutiveCount === 3) patterns[currentSender].tripleTexts++;
+                    else if (consecutiveCount >= 4) patterns[currentSender].quadPlusTexts++;
+
+                    if (consecutiveCount > patterns[currentSender].longestStreak) {
+                        patterns[currentSender].longestStreak = consecutiveCount;
+                    }
+                }
+
+                // Start new streak
+                currentSender = msg.sender;
+                consecutiveCount = 1;
+            }
+        });
+
+        // Don't forget the last streak
+        if (currentSender && consecutiveCount > 1) {
+            patterns[currentSender].totalConsecutiveMessages += consecutiveCount;
+
+            if (consecutiveCount === 2) patterns[currentSender].doubleTexts++;
+            else if (consecutiveCount === 3) patterns[currentSender].tripleTexts++;
+            else if (consecutiveCount >= 4) patterns[currentSender].quadPlusTexts++;
+
+            if (consecutiveCount > patterns[currentSender].longestStreak) {
+                patterns[currentSender].longestStreak = consecutiveCount;
+            }
+        }
+
+        // Calculate percentages
+        this.participants.forEach(p => {
+            const totalMessages = this.userMessages.filter(m => m.sender === p).length;
+            patterns[p].percentage = ((patterns[p].totalConsecutiveMessages / totalMessages) * 100).toFixed(1);
+            patterns[p].totalInstances = patterns[p].doubleTexts + patterns[p].tripleTexts + patterns[p].quadPlusTexts;
+        });
+
+        return patterns;
+    }
+
+    getGhostPeriods() {
+        const ghostPeriods = {};
+        const ghostThreshold = 24 * 60 * 60 * 1000; // 24 hours
+
+        this.participants.forEach(p => {
+            ghostPeriods[p] = {
+                totalGhosts: 0,
+                longestGhost: 0,
+                averageGhostDuration: 0,
+                ghostInstances: []
+            };
+        });
+
+        for (let i = 1; i < this.userMessages.length; i++) {
+            const currentMsg = this.userMessages[i];
+            const previousMsg = this.userMessages[i - 1];
+
+            // Check if different senders (someone is waiting for a response)
+            if (currentMsg.sender !== previousMsg.sender) {
+                const timeDiff = currentMsg.timestamp - previousMsg.timestamp;
+
+                // If response took more than 24 hours, it's a ghost
+                if (timeDiff > ghostThreshold) {
+                    const ghoster = currentMsg.sender; // Person who finally responded
+
+                    ghostPeriods[ghoster].totalGhosts++;
+                    ghostPeriods[ghoster].ghostInstances.push({
+                        duration: timeDiff,
+                        startDate: previousMsg.date,
+                        endDate: currentMsg.date
+                    });
+
+                    if (timeDiff > ghostPeriods[ghoster].longestGhost) {
+                        ghostPeriods[ghoster].longestGhost = timeDiff;
+                    }
+                }
+            }
+        }
+
+        // Calculate averages and sort instances
+        this.participants.forEach(p => {
+            if (ghostPeriods[p].totalGhosts > 0) {
+                const totalDuration = ghostPeriods[p].ghostInstances.reduce((sum, g) => sum + g.duration, 0);
+                ghostPeriods[p].averageGhostDuration = totalDuration / ghostPeriods[p].totalGhosts;
+
+                // Sort by duration (longest first) and keep top 5
+                ghostPeriods[p].ghostInstances.sort((a, b) => b.duration - a.duration);
+                ghostPeriods[p].top5Ghosts = ghostPeriods[p].ghostInstances.slice(0, 5);
+            }
+        });
+
+        return ghostPeriods;
+    }
+
+    getConversationEnders() {
+        const enders = {};
+        const conversationGap = 6 * 60 * 60 * 1000; // 6 hours defines conversation end
+
+        this.participants.forEach(p => {
+            enders[p] = {
+                count: 0,
+                percentage: 0
+            };
+        });
+
+        let totalConversationEnds = 0;
+
+        for (let i = 0; i < this.userMessages.length - 1; i++) {
+            const currentMsg = this.userMessages[i];
+            const nextMsg = this.userMessages[i + 1];
+
+            const timeDiff = nextMsg.timestamp - currentMsg.timestamp;
+
+            // If gap is more than 6 hours, current message ended the conversation
+            if (timeDiff > conversationGap) {
+                enders[currentMsg.sender].count++;
+                totalConversationEnds++;
+            }
+        }
+
+        // The last message in the chat also ends a conversation
+        if (this.userMessages.length > 0) {
+            const lastMsg = this.userMessages[this.userMessages.length - 1];
+            enders[lastMsg.sender].count++;
+            totalConversationEnds++;
+        }
+
+        // Calculate percentages
+        this.participants.forEach(p => {
+            if (totalConversationEnds > 0) {
+                enders[p].percentage = ((enders[p].count / totalConversationEnds) * 100).toFixed(1);
+            }
+        });
+
+        return {
+            byParticipant: enders,
+            totalConversations: totalConversationEnds
+        };
     }
 
     /**

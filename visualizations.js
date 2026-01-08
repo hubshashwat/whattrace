@@ -262,6 +262,83 @@ export class ChartBuilder {
     }
 
     /**
+     * Create individual response time by participant chart
+     */
+    createIndividualResponseTimeChart(ctx, byParticipant) {
+        const participants = Object.keys(byParticipant.average);
+        const avgTimes = participants.map(p => byParticipant.average[p] / (1000 * 60)); // Convert to minutes
+        const medianTimes = participants.map(p => byParticipant.median[p] / (1000 * 60)); // Convert to minutes
+
+        return new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: participants,
+                datasets: [
+                    {
+                        label: 'Average Response Time',
+                        data: avgTimes,
+                        backgroundColor: 'rgba(0, 243, 255, 0.6)',
+                        borderColor: this.defaultColors.primary,
+                        borderWidth: 1,
+                        borderRadius: 8
+                    },
+                    {
+                        label: 'Median Response Time',
+                        data: medianTimes,
+                        backgroundColor: 'rgba(189, 0, 255, 0.6)',
+                        borderColor: this.defaultColors.secondary,
+                        borderWidth: 1,
+                        borderRadius: 8
+                    }
+                ]
+            },
+            options: {
+                ...this.chartOptions,
+                plugins: {
+                    ...this.chartOptions.plugins,
+                    tooltip: {
+                        ...this.chartOptions.plugins.tooltip,
+                        callbacks: {
+                            label: function (context) {
+                                const minutes = context.parsed.y;
+                                if (minutes < 60) {
+                                    return `${context.dataset.label}: ${minutes.toFixed(1)} min`;
+                                } else {
+                                    const hours = (minutes / 60).toFixed(1);
+                                    return `${context.dataset.label}: ${hours} hrs`;
+                                }
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        ticks: {
+                            color: '#fff',
+                            font: { size: 11 },
+                            maxRotation: 0,
+                            minRotation: 0
+                        }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            color: 'rgba(255, 255, 255, 0.7)',
+                            callback: function (value) {
+                                if (value < 60) {
+                                    return value.toFixed(0) + ' min';
+                                } else {
+                                    return (value / 60).toFixed(1) + ' hrs';
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    /**
      * Create top words "Bubble" Chart
      * (Simulated using Scatter/Bubble logic or styled Bar)
      * We'll stick to a highly styled Bar chart to ensure reliability, 
@@ -430,10 +507,13 @@ export class ChartBuilder {
     createStreaksChart(ctx, streaksData) {
         if (!streaksData.longestStreak) return null;
 
+        const avgStreakLength = streaksData.totalStreaks > 0
+            ? (streaksData.top5Streaks.reduce((sum, s) => sum + s.days.length, 0) / Math.min(5, streaksData.totalStreaks)).toFixed(1)
+            : 0;
+
         const data = [
-            { label: 'Longest Streak', value: streaksData.longestStreak.days.length },
-            { label: 'Total Streaks', value: streaksData.totalStreaks },
-            { label: 'Messages in Longest', value: Math.min(streaksData.longestStreak.messageCount, 500) } // Cap for visibility
+            { label: 'Maximum Streak (days)', value: streaksData.longestStreak.days.length },
+            { label: 'Average Streak (days)', value: parseFloat(avgStreakLength) }
         ];
 
         return new Chart(ctx, {
@@ -444,8 +524,7 @@ export class ChartBuilder {
                     data: data.map(d => d.value),
                     backgroundColor: [
                         'rgba(0, 243, 255, 0.7)',
-                        'rgba(189, 0, 255, 0.7)',
-                        'rgba(255, 204, 0, 0.7)'
+                        'rgba(189, 0, 255, 0.7)'
                     ],
                     borderRadius: 10,
                     barPercentage: 0.7
@@ -531,7 +610,56 @@ export class ChartBuilder {
         });
     }
 
+    /**
+     * Create conversation enders chart
+     */
+    createConversationEndersChart(ctx, participants, counts, percentages) {
+        return new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: participants,
+                datasets: [{
+                    data: counts,
+                    backgroundColor: [
+                        'rgba(0, 243, 255, 0.8)',
+                        'rgba(189, 0, 255, 0.8)',
+                        'rgba(255, 204, 0, 0.8)',
+                        'rgba(0, 255, 163, 0.8)'
+                    ],
+                    borderWidth: 0,
+                    hoverOffset: 15
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '65%',
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            color: '#fff',
+                            font: { family: "'Space Grotesk'", size: 12 },
+                            usePointStyle: true,
+                            padding: 15
+                        }
+                    },
+                    tooltip: {
+                        ...this.chartOptions.plugins.tooltip,
+                        callbacks: {
+                            label: function (context) {
+                                const index = context.dataIndex;
+                                return `${context.label}: ${context.parsed} times (${percentages[index]}%)`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
     generateGradientColors(count) {
+
         // Implementation
     }
 

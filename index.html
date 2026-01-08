@@ -41,17 +41,48 @@
 
       <!-- Upload Portal -->
       <div id="dropZone" class="upload-view">
-        <div class="portal-ring"></div>
-        <div class="upload-core">
-          <button class="btn-neon-circle">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M12 19V5M5 12l7-7 7 7" />
-            </svg>
-          </button>
-          <div class="upload-text">INITIALIZE UPLOAD</div>
-          <input type="file" id="fileInput" accept=".txt" class="file-input-hidden">
+        <div class="upload-container">
+          <!-- Left: Upload Portal -->
+          <div class="upload-section">
+            <div class="portal-ring"></div>
+            <div class="upload-core">
+              <button class="btn-neon-circle">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M12 19V5M5 12l7-7 7 7" />
+                </svg>
+              </button>
+              <div class="upload-text">INITIALIZE UPLOAD</div>
+              <input type="file" id="fileInput" accept=".txt,.zip" class="file-input-hidden">
+            </div>
+            <div class="drag-hint">DROP_FILE_TO_ENGAGE</div>
+          </div>
+
+          <!-- Right: How to Export Guide -->
+          <div class="how-to-guide">
+            <div class="guide-title">📱 HOW TO EXPORT YOUR CHAT</div>
+            <div class="guide-steps">
+              <div class="guide-step">
+                <span class="step-number">1</span>
+                <span class="step-text">Open WhatsApp → Select the chat</span>
+              </div>
+              <div class="guide-step">
+                <span class="step-number">2</span>
+                <span class="step-text">Tap ⋮ (Menu) → More → Export chat</span>
+              </div>
+              <div class="guide-step">
+                <span class="step-number">3</span>
+                <span class="step-text">Choose <strong>"Without media"</strong></span>
+              </div>
+              <div class="guide-step">
+                <span class="step-number">4</span>
+                <span class="step-text">Upload the <strong>.txt or .zip</strong> file here</span>
+              </div>
+            </div>
+            <div class="privacy-note">
+              🔒 <strong>100% Private</strong> - All processing happens in your browser
+            </div>
+          </div>
         </div>
-        <div class="drag-hint">DROP_FILE_TO_ENGAGE</div>
       </div>
 
       <!-- Dashboard -->
@@ -76,28 +107,42 @@
 
         <!-- Charts Grid -->
         <div class="charts-grid">
+          <!-- Row 1 -->
           <div class="glass-panel wide">
             <h3>HOURLY_ACTIVITY_MATRIX</h3><canvas id="hourlyActivityChart"></canvas>
           </div>
-          <div class="glass-panel tall">
-            <h3>KEYWORD_CLUSTERS</h3><canvas id="topWordsChart"></canvas>
-          </div>
+
+          <!-- Row 2 -->
           <div class="glass-panel">
             <h3>MSG_DISTRIBUTION</h3><canvas id="messageCountChart"></canvas>
           </div>
+          <div class="glass-panel">
+            <h3>EMOJI_SENTIMENT</h3><canvas id="topEmojisChart"></canvas>
+          </div>
+
+          <!-- Row 3 -->
           <div class="glass-panel">
             <h3>RESPONSE_LATENCY</h3>
             <div id="avgResponseTime" class="big-metric">--</div><canvas id="responseTimeChart"></canvas>
           </div>
           <div class="glass-panel">
-            <h3>EMOJI_SENTIMENT</h3><canvas id="topEmojisChart"></canvas>
+            <h3>INDIVIDUAL_RESPONSE_TIME</h3><canvas id="individualResponseTimeChart"></canvas>
           </div>
+
+          <!-- Row 4 -->
           <div class="glass-panel">
             <h3>DAILY_RHYTHM</h3><canvas id="dailyActivityChart"></canvas>
           </div>
+          <div class="glass-panel">
+            <h3>KEYWORD_CLUSTERS</h3><canvas id="topWordsChart"></canvas>
+          </div>
+
+          <!-- Row 5 -->
           <div class="glass-panel wide">
             <h3>MONTHLY_TRAJECTORY</h3><canvas id="monthlyTrendChart"></canvas>
           </div>
+
+          <!-- Row 6 -->
           <div class="glass-panel">
             <h3>COMM_GAPS</h3>
             <div id="conversationGaps"></div>
@@ -106,6 +151,8 @@
             <h3>STREAK_ANALYSIS</h3>
             <canvas id="streaksChart"></canvas>
           </div>
+
+          <!-- Row 7 -->
           <div class="glass-panel">
             <h3>INITIATION_PROTOCOL</h3>
             <canvas id="initiationChart"></canvas>
@@ -114,18 +161,55 @@
             <h3>TEXT_ANALYSIS</h3>
             <canvas id="messageLengthChart"></canvas>
           </div>
-          <div class="glass-panel info-panel">
+
+          <!-- Row 8 -->
+          <div class="glass-panel">
             <h3>PUNCTUATION</h3>
             <div id="punctuationAnalysis"></div>
           </div>
-          <div class="glass-panel tall">
+          <div class="glass-panel">
             <h3>ACTIVITY_PERSONAS</h3>
             <div id="activityPersonas"></div>
           </div>
+
+          <!-- Row 9 - Conversation Dynamics -->
+          <div class="glass-panel">
+            <h3>📱 DOUBLE_TEXTING</h3>
+            <div id="doubleTextingAnalysis"></div>
+          </div>
+          <div class="glass-panel">
+            <h3>👻 GHOST_PERIODS</h3>
+            <div id="ghostPeriodsAnalysis"></div>
+          </div>
+
+          <!-- Row 10 - Conversation Enders -->
+          <div class="glass-panel">
+            <h3>🏁 CONVERSATION_ENDERS</h3>
+            <canvas id="conversationEndersChart"></canvas>
+          </div>
+          <div class="glass-panel">
+            <h3>📊 PEAK_ACTIVITY</h3>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; padding: 1rem;">
+              <div style="text-align: center;">
+                <div style="color: var(--text-muted); font-size: 0.8rem; margin-bottom: 0.5rem;">Peak Hour</div>
+                <div id="peakHour" style="font-size: 1.5rem; font-weight: 600; color: var(--accent-primary);"></div>
+              </div>
+              <div style="text-align: center;">
+                <div style="color: var(--text-muted); font-size: 0.8rem; margin-bottom: 0.5rem;">Peak Day</div>
+                <div id="peakDay" style="font-size: 1.5rem; font-weight: 600; color: var(--accent-secondary);"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Row 11 - Best Time to Message -->
+          <div class="glass-panel wide">
+            <h3>⏰ OPTIMAL_RESPONSE_WINDOWS</h3>
+            <div id="bestTimeToMessage"></div>
+
+          </div>
+
           <!-- Hidden elements for compatibility -->
           <canvas id="mediaSharingChart" class="hidden"></canvas>
-          <div id="peakHour" class="hidden"></div>
-          <div id="peakDay" class="hidden"></div>
         </div>
 
       </div>
