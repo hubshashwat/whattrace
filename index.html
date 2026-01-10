@@ -93,6 +93,19 @@
         <div class="dashboard-head">
           <h1 id="chatTitle">TARGET_CHAT</h1>
           <p id="dateRange" class="glow-text">-- / -- / --</p>
+          
+          <!-- Timeline Filter -->
+          <div class="timeline-filter">
+            <label for="timelineSelect">📅 FILTER_TIMELINE:</label>
+            <select id="timelineSelect" class="timeline-select">
+              <option value="all">All Time</option>
+              <option value="7">Past 7 Days</option>
+              <option value="30">Past 30 Days</option>
+              <option value="90">Past 3 Months</option>
+              <option value="180">Past 6 Months</option>
+              <option value="365">Past 1 Year</option>
+            </select>
+          </div>
         </div>
 
         <!-- Stats HUD -->

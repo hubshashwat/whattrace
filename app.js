@@ -11,6 +11,7 @@ class WhatsAppAnalyzerApp {
         this.analytics = null;
         this.chartBuilder = new ChartBuilder();
         this.charts = {};
+        this.currentTimelineFilter = 'all';
 
         this.initializePrivacyModal();
         this.initializeEventListeners();
@@ -86,6 +87,45 @@ class WhatsAppAnalyzerApp {
         if (exportBtn) {
             exportBtn.addEventListener('click', () => this.exportAnalytics());
         }
+
+        // Timeline filter
+        const timelineSelect = document.getElementById('timelineSelect');
+        if (timelineSelect) {
+            timelineSelect.addEventListener('change', (e) => this.handleTimelineChange(e));
+        }
+    }
+
+    handleTimelineChange(event) {
+        const days = event.target.value;
+        this.currentTimelineFilter = days;
+
+        if (!this.parsedData) return;
+
+        this.showLoading();
+        this.destroyAllCharts();
+
+        try {
+            // filter data based on selected timeline
+            const filteredData = WhatsAppAnalytics.filterByDays(this.parsedData, days === 'all' ? null : parseInt(days));
+
+            // check if we have messages after filtering
+            if (!filteredData.messages || filteredData.messages.length === 0) {
+                this.showError('No messages found in the selected time range.');
+                return;
+            }
+
+            // create new analytics with filtered data
+            this.analytics = new WhatsAppAnalytics(filteredData);
+
+            // re-render
+            this.renderAnalytics();
+
+        } catch (error) {
+            console.error('Timeline filter error:', error);
+            this.showError(`Error filtering data: ${error.message}`);
+        } finally {
+            this.hideLoading();
+        }
     }
 
     async handleFileSelect(event) {
@@ -112,6 +152,11 @@ class WhatsAppAnalyzerApp {
 
         // Destroy old charts to prevent memory leaks and growth
         this.destroyAllCharts();
+
+        // Reset timeline filter
+        this.currentTimelineFilter = 'all';
+        const timelineSelect = document.getElementById('timelineSelect');
+        if (timelineSelect) timelineSelect.value = 'all';
 
         try {
             let text;
@@ -266,7 +311,7 @@ class WhatsAppAnalyzerApp {
         if (ctx) {
             this.charts.messageCount = this.chartBuilder.createMessageCountPie(
                 ctx,
-                this.parsedData.participants,
+                this.analytics.participants,
                 patterns.messageCountByParticipant.counts
             );
         }

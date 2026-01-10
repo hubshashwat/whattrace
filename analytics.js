@@ -13,6 +13,45 @@ export class WhatsAppAnalytics {
     }
 
     /**
+     * Filter messages by date range and return filtered data
+     * @param {number} days - Number of days to filter (from today backwards)
+     * @returns {Object} - Filtered parsed data object
+     */
+    static filterByDays(parsedData, days) {
+        if (!days || days === 'all') {
+            return parsedData;
+        }
+
+        const now = new Date();
+        const cutoffDate = new Date(now.getTime() - (days * 24 * 60 * 60 * 1000));
+
+        const filteredMessages = parsedData.messages.filter(msg => {
+            return msg.date >= cutoffDate;
+        });
+
+        // recalc date range for filtered messages
+        let start = null;
+        let end = null;
+        filteredMessages.forEach(msg => {
+            if (!start || msg.date < start) start = msg.date;
+            if (!end || msg.date > end) end = msg.date;
+        });
+
+        const durationMs = end && start ? end - start : 0;
+        const durationDays = Math.max(1, Math.ceil(durationMs / (1000 * 60 * 60 * 24)));
+
+        return {
+            messages: filteredMessages,
+            participants: parsedData.participants,
+            dateRange: {
+                start: start || parsedData.dateRange.start,
+                end: end || parsedData.dateRange.end,
+                durationDays: durationDays
+            }
+        };
+    }
+
+    /**
      * MESSAGING PATTERNS
      */
 
@@ -597,19 +636,19 @@ export class WhatsAppAnalytics {
     }
 
     getUrlSharingStats() {
-        const stats = {};
+        const urlStats = {};
 
         this.participants.forEach(p => {
             const messages = this.userMessages.filter(m => m.sender === p);
             const urlMessages = messages.filter(m => m.metadata.hasUrl);
 
-            stats[p] = {
+            urlStats[p] = {
                 count: urlMessages.length,
                 percentage: ((urlMessages.length / messages.length) * 100).toFixed(1)
             };
         });
 
-        return stats;
+        return urlStats;
     }
 
     /**
