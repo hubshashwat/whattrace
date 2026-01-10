@@ -43,6 +43,7 @@ temp/
 # User data (chat exports)
 *.txt
 !README.txt
+*.zip
 
 # Analysis exports
 whatsapp-analysis.json
