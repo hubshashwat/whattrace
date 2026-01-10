@@ -12,8 +12,30 @@ class WhatsAppAnalyzerApp {
         this.chartBuilder = new ChartBuilder();
         this.charts = {};
 
+        this.initializePrivacyModal();
         this.initializeEventListeners();
         this.initialize3DEffects();
+    }
+
+    initializePrivacyModal() {
+        const modal = document.getElementById('privacyModal');
+        const acceptBtn = document.getElementById('acceptPrivacy');
+
+        // Check if user has already accepted
+        const hasAccepted = localStorage.getItem('privacyAccepted');
+
+        if (!hasAccepted) {
+            // Show modal on first visit
+            modal.classList.remove('hidden');
+        } else {
+            modal.classList.add('hidden');
+        }
+
+        // Handle accept button click
+        acceptBtn.addEventListener('click', () => {
+            localStorage.setItem('privacyAccepted', 'true');
+            modal.classList.add('hidden');
+        });
     }
 
     initialize3DEffects() {

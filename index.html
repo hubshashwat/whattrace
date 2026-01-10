@@ -66,7 +66,10 @@
               </div>
               <div class="guide-step">
                 <span class="step-number">2</span>
-                <span class="step-text">Tap ⋮ (Menu) → More → Export chat</span>
+                <span class="step-text">
+                  <strong>Android:</strong> Tap ⋮ → More → Export chat<br>
+                  <strong>iPhone:</strong> Tap contact name → Export Chat
+                </span>
               </div>
               <div class="guide-step">
                 <span class="step-number">3</span>
@@ -223,6 +226,23 @@
   </div>
 
   <div id="errorMessage" class="error-toast hidden"></div>
+
+  <!-- Privacy Modal -->
+  <div id="privacyModal" class="privacy-modal">
+    <div class="modal-overlay"></div>
+    <div class="modal-content">
+      <div class="modal-icon">🔒</div>
+      <h2 class="modal-title">Your Privacy Matters</h2>
+      <div class="modal-text">
+        <p><strong>100% Private & Secure</strong></p>
+        <p>All chat analysis happens <strong>locally in your browser</strong>.</p>
+        <p>✨ No data is uploaded to any server<br>
+          ✨ No tracking or analytics<br>
+          ✨ Your conversations stay private</p>
+      </div>
+      <button id="acceptPrivacy" class="btn-accept">I Understand</button>
+    </div>
+  </div>
 
   <script type="module" src="app.js"></script>
 </body>
