@@ -2,13 +2,41 @@
 
 export class WhatsAppParser {
     constructor() {
-        // Support both Android and iPhone formats:
-        // Android: DD/MM/YYYY, HH:MM - Sender: Message
-        // iPhone: [DD/MM/YYYY, HH:MM:SS AM/PM] Sender: Message
+        // Support multiple WhatsApp export formats across regions and platforms
+        // Patterns ordered from most specific to most flexible
 
-        // Combined pattern for both formats
-        this.messagePattern = /^(?:\[)?(\d{1,2}\/\d{1,2}\/\d{2,4}),?\s+(\d{1,2}:\d{2}(?::\d{2})?(?:\s?[AP]M)?)(?:\])?\s*[-–]?\s*([^:]+?):\s*(.*)$/;
-        this.systemMessagePattern = /^(?:\[)?(\d{1,2}\/\d{1,2}\/\d{2,4}),?\s+(\d{1,2}:\d{2}(?::\d{2})?(?:\s?[AP]M)?)(?:\])?\s*[-–]?\s*(.*)$/;
+        this.messagePatterns = [
+            // iPhone format with brackets: [DD/MM/YYYY, HH:MM:SS] or [DD/MM/YYYY, HH:MM:SS AM/PM]
+            /^\[(\d{1,2}[\/\-\.](\d{1,2})[\/\-\.](\d{2,4}),?\s+(\d{1,2}:\d{2}(?::\d{2})?(?:\s?[AP]M)?))\]\s*([^:]+?):\s*(.*)$/,
+
+            // Android format with dash: DD/MM/YYYY, HH:MM - Sender: Message
+            /^(\d{1,2}[\/\-\.](\d{1,2})[\/\-\.](\d{2,4}),?\s+(\d{1,2}:\d{2}(?::\d{2})?(?:\s?[AP]M)?))\s*[-–—]\s*([^:]+?):\s*(.*)$/,
+
+            // ISO format: YYYY-MM-DD HH:MM:SS
+            /^(\d{4}[\/\-\.](\d{1,2})[\/\-\.](\d{1,2})\s+(\d{1,2}:\d{2}(?::\d{2})?))\s*[-–—]?\s*([^:]+?):\s*(.*)$/,
+
+            // Flexible fallback: any date-like pattern with optional brackets
+            /^[\[\(]?(\d{1,4}[\/\-\.](\d{1,2})[\/\-\.](\d{1,4})[,\s]+(\d{1,2}:\d{2}(?::\d{2})?(?:\s?[AP]M)?))[\]\)]?\s*[-–—]?\s*([^:]+?):\s*(.*)$/
+        ];
+
+        this.systemMessagePatterns = [
+            // System message with brackets
+            /^\[(\d{1,2}[\/\-\.](\d{1,2})[\/\-\.](\d{2,4}),?\s+(\d{1,2}:\d{2}(?::\d{2})?(?:\s?[AP]M)?))\]\s*(.*)$/,
+
+            // System message with dash
+            /^(\d{1,2}[\/\-\.](\d{1,2})[\/\-\.](\d{2,4}),?\s+(\d{1,2}:\d{2}(?::\d{2})?(?:\s?[AP]M)?))\s*[-–—]\s*(.*)$/,
+
+            // ISO format system message
+            /^(\d{4}[\/\-\.](\d{1,2})[\/\-\.](\d{1,2})\s+(\d{1,2}:\d{2}(?::\d{2})?))\s*[-–—]?\s*(.*)$/,
+
+            // Flexible fallback
+            /^[\[\(]?(\d{1,4}[\/\-\.](\d{1,2})[\/\-\.](\d{1,4})[,\s]+(\d{1,2}:\d{2}(?::\d{2})?(?:\s?[AP]M)?))[\]\)]?\s*(.*)$/
+        ];
+
+        // Initially unknown, will be detected
+        this.dateFormat = null;
+        this.dateSeparator = '/';
+        this.isISOFormat = false;
     }
 
     /**
@@ -30,10 +58,10 @@ export class WhatsAppParser {
             const line = lines[i].trim();
             if (!line) continue;
 
-            // Try to match as a new message
-            const messageMatch = line.match(this.messagePattern);
+            // Try to match as a new message using all patterns
+            const messageMatch = this.tryParseMessage(line);
 
-            if (messageMatch) {
+            if (messageMatch.success) {
                 // Save previous message if exists
                 if (currentMessage) {
                     messages.push(this.processMessage(currentMessage));
@@ -42,20 +70,20 @@ export class WhatsAppParser {
                     }
                 }
 
-                // Start new message
-                const [, date, time, sender, content] = messageMatch;
+                // Start new message - extract date, time, sender, content
+                const extracted = this.extractMessageParts(messageMatch.match, messageMatch.patternIndex);
                 currentMessage = {
-                    date,
-                    time,
-                    sender: sender.trim(),
-                    content: content.trim(),
+                    date: extracted.date,
+                    time: extracted.time,
+                    sender: extracted.sender.trim(),
+                    content: extracted.content.trim(),
                     rawLine: line
                 };
             } else {
                 // Check if it's a system message
-                const systemMatch = line.match(this.systemMessagePattern);
+                const systemMatch = this.tryParseSystemMessage(line);
 
-                if (systemMatch && !systemMatch[3].includes(':')) {
+                if (systemMatch.success) {
                     // Save previous message if exists
                     if (currentMessage) {
                         messages.push(this.processMessage(currentMessage));
@@ -64,12 +92,12 @@ export class WhatsAppParser {
                         }
                     }
 
-                    const [, date, time, content] = systemMatch;
+                    const extracted = this.extractSystemMessageParts(systemMatch.match, systemMatch.patternIndex);
                     currentMessage = {
-                        date,
-                        time,
+                        date: extracted.date,
+                        time: extracted.time,
                         sender: 'SYSTEM',
-                        content: content.trim(),
+                        content: extracted.content.trim(),
                         rawLine: line,
                         isSystem: true
                     };
@@ -98,22 +126,134 @@ export class WhatsAppParser {
     }
 
     /**
-     * Detect if date format is DD/MM/YYYY or MM/DD/YYYY
+     * Try to parse a line as a message using all patterns
+     */
+    tryParseMessage(line) {
+        for (let i = 0; i < this.messagePatterns.length; i++) {
+            const match = line.match(this.messagePatterns[i]);
+            if (match) {
+                return {
+                    success: true,
+                    match,
+                    patternIndex: i
+                };
+            }
+        }
+        return { success: false };
+    }
+
+    /**
+     * Try to parse a line as a system message using all patterns
+     */
+    tryParseSystemMessage(line) {
+        for (let i = 0; i < this.systemMessagePatterns.length; i++) {
+            const match = line.match(this.systemMessagePatterns[i]);
+            if (match && !match[match.length - 1].includes(':')) {
+                return {
+                    success: true,
+                    match,
+                    patternIndex: i
+                };
+            }
+        }
+        return { success: false };
+    }
+
+    /**
+     * Extract message parts based on which pattern matched
+     */
+    extractMessageParts(match, patternIndex) {
+        // All patterns are structured to have:
+        // Group 1: Full timestamp
+        // Group 2-4: Date components (varies)
+        // Second to last: Sender
+        // Last: Content
+
+        const fullTimestamp = match[1];
+        const sender = match[match.length - 2];
+        const content = match[match.length - 1];
+
+        // Parse the timestamp to extract date and time
+        const { date, time } = this.parseTimestampString(fullTimestamp);
+
+        return { date, time, sender, content };
+    }
+
+    /**
+     * Extract system message parts
+     */
+    extractSystemMessageParts(match, patternIndex) {
+        const fullTimestamp = match[1];
+        const content = match[match.length - 1];
+
+        const { date, time } = this.parseTimestampString(fullTimestamp);
+
+        return { date, time, content };
+    }
+
+    /**
+     * Parse timestamp string to extract date and time components
+     */
+    parseTimestampString(timestampStr) {
+        // Try to split by common separators
+        const parts = timestampStr.split(/[,\s]+/);
+
+        // Date is first part, time is last part(s)
+        const dateStr = parts[0];
+        const timeStr = parts.slice(1).join(' ');
+
+        return { date: dateStr, time: timeStr };
+    }
+
+    /**
+     * Detect date format (DD/MM/YYYY, MM/DD/YYYY, or YYYY-MM-DD) and separator
      */
     detectDateFormat(lines) {
         let isMMDD = false;
         let isDDMM = false;
+        let isISO = false;
+        let separator = '/';
 
         for (const line of lines) {
-            const match = line.match(this.messagePattern) || line.match(this.systemMessagePattern);
+            const messageMatch = this.tryParseMessage(line);
+            const systemMatch = this.tryParseSystemMessage(line);
+
+            const match = messageMatch.success ? messageMatch.match :
+                (systemMatch.success ? systemMatch.match : null);
+
             if (match) {
-                const [p1, p2] = match[1].split('/').map(Number);
-                if (p2 > 12) isMMDD = true; // 12/30 -> p2=30 -> MM/DD
-                if (p1 > 12) isDDMM = true; // 30/12 -> p1=30 -> DD/MM
+                const timestampStr = match[1];
+
+                // Detect separator
+                if (timestampStr.includes('/')) separator = '/';
+                else if (timestampStr.includes('-')) separator = '-';
+                else if (timestampStr.includes('.')) separator = '.';
+
+                // Extract date part
+                const datePart = timestampStr.split(/[,\s]+/)[0];
+                const parts = datePart.split(/[\/\-\.]/);
+
+                if (parts.length === 3) {
+                    const [p1, p2, p3] = parts.map(Number);
+
+                    // Check for ISO format (YYYY-MM-DD)
+                    if (p1 > 31 && p1 < 3000) {
+                        isISO = true;
+                        this.isISOFormat = true;
+                    } else {
+                        // Check DD/MM vs MM/DD
+                        if (p2 > 12) isMMDD = true; // 12/30 -> p2=30 -> MM/DD
+                        if (p1 > 12) isDDMM = true; // 30/12 -> p1=30 -> DD/MM
+                    }
+                }
+
+                if (isMMDD || isDDMM || isISO) break;
             }
-            if (isMMDD || isDDMM) break;
         }
 
+        this.dateSeparator = separator;
+
+        if (isISO) return 'YYYY-MM-DD';
         if (isMMDD && !isDDMM) return 'MM/DD/YYYY';
         if (isDDMM && !isMMDD) return 'DD/MM/YYYY';
         return 'DD/MM/YYYY'; // Default fallback
@@ -154,10 +294,13 @@ export class WhatsAppParser {
      * Parse date and time strings into Date object
      */
     parseTimestamp(dateStr, timeStr) {
-        const parts = dateStr.split('/').map(Number);
+        // Split by detected separator
+        const parts = dateStr.split(/[\/\-\.]/).map(Number);
         let day, month, year;
 
-        if (this.dateFormat === 'MM/DD/YYYY') {
+        if (this.dateFormat === 'YYYY-MM-DD') {
+            [year, month, day] = parts;
+        } else if (this.dateFormat === 'MM/DD/YYYY') {
             [month, day, year] = parts;
         } else {
             [day, month, year] = parts;
@@ -193,6 +336,7 @@ export class WhatsAppParser {
      */
     isMediaMessage(content) {
         const mediaPatterns = [
+            // English
             /image omitted/i,
             /video omitted/i,
             /audio omitted/i,
@@ -200,8 +344,44 @@ export class WhatsAppParser {
             /GIF omitted/i,
             /document omitted/i,
             /contact card omitted/i,
+            /<Media omitted>/i,
+
+            // Spanish
+            /imagen omitida/i,
+            /vídeo omitido/i,
+            /video omitido/i,
+            /audio omitido/i,
+
+            // German
+            /Bild weggelassen/i,
+            /Video weggelassen/i,
+            /<Medien ausgeschlossen>/i,
+
+            // French
+            /image omise/i,
+            /vidéo omise/i,
+
+            // Portuguese
+            /imagem oculta/i,
+            /vídeo oculto/i,
+            /video oculto/i,
+
+            // Italian
+            /immagine omessa/i,
+            /video omesso/i,
+
+            // Hindi/Indian languages
+            /छवि छोड़ दी गई/i,
+            /वीडियो छोड़ दिया गया/i,
+
+            // Dutch
+            /afbeelding weggelaten/i,
+            /video weggelaten/i,
+
+            // Generic patterns
             /<attached:/i,
-            /\.jpg|\.jpeg|\.png|\.gif|\.mp4|\.pdf|\.doc/i
+            /\.jpg|\.jpeg|\.png|\.gif|\.mp4|\.pdf|\.doc/i,
+            /media omitted/i
         ];
 
         return mediaPatterns.some(pattern => pattern.test(content));
