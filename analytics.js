@@ -125,7 +125,7 @@ export class WhatsAppAnalytics {
             const monthKey = `${msg.metadata.year}-${String(msg.metadata.month + 1).padStart(2, '0')}`;
             byMonth[monthKey] = (byMonth[monthKey] || 0) + 1;
 
-            const dateKey = msg.date.toISOString().split('T')[0];
+            const dateKey = msg.timestamp.toISOString().split('T')[0];
             byDate[dateKey] = (byDate[dateKey] || 0) + 1;
         });
 
@@ -555,7 +555,7 @@ export class WhatsAppAnalytics {
 
         const messagesByDate = {};
         this.userMessages.forEach(msg => {
-            const dateKey = msg.date.toISOString().split('T')[0];
+            const dateKey = msg.timestamp.toISOString().split('T')[0];
             messagesByDate[dateKey] = (messagesByDate[dateKey] || 0) + 1;
         });
 

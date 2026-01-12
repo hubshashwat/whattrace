@@ -95,9 +95,21 @@
         <div class="dashboard-head">
           <h1 id="chatTitle">TARGET_CHAT</h1>
           <p id="dateRange" class="glow-text">-- / -- / --</p>
-            <button id="exportPdfBtn" class="btn-export">
-              ⬇ EXPORT PDF
-            </button>
+          
+          <!-- Date Range Filter -->
+          <div class="date-filter-container">
+            <div class="filter-label">📅 TEMPORAL_FILTER</div>
+            <div class="date-inputs">
+              <input type="date" id="startDate" class="date-input" title="Start Date">
+              <span class="date-separator">→</span>
+              <input type="date" id="endDate" class="date-input" title="End Date">
+              <button id="applyFilter" class="btn-filter">APPLY</button>
+              <button id="resetFilter" class="btn-filter-reset">RESET</button>
+            </div>
+          </div>
+          <button id="exportPdfBtn" class="btn-export">
+            ⬇ EXPORT PDF
+          </button>
         </div>
 
         <!-- Stats HUD -->
@@ -248,7 +260,7 @@
       <button id="acceptPrivacy" class="btn-accept">I Understand</button>
     </div>
   </div>
-  
+
   <script type="module" src="app.js"></script>
 </body>
 
