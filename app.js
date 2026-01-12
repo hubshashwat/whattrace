@@ -4,6 +4,7 @@ import parser from './parser.js';
 import WhatsAppAnalytics from './analytics.js';
 import ChartBuilder from './visualizations.js';
 import { formatters, formatNumber, exportUtils } from './utils.js';
+import { initPdfExport } from './exportPdf.js';
 
 class WhatsAppAnalyzerApp {
     constructor() {
@@ -145,6 +146,9 @@ class WhatsAppAnalyzerApp {
 
             if (dropZone) dropZone.classList.add('hidden');
             if (results) results.classList.remove('hidden');
+
+            initPdfExport();
+
 
             console.log('Analysis Complete');
 
