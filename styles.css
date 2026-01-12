@@ -1294,6 +1294,28 @@ html {
   transform: translateY(-2px);
 }
 
+.btn-export {
+  background: linear-gradient(135deg, var(--neon-purple), var(--neon-pink));
+  border: none;
+  border-radius: 8px;
+  padding: 0.6rem 1.5rem;
+  color: white;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  box-shadow: 0 4px 15px rgba(189, 0, 255, 0.3);
+  margin-top: 1rem;
+}
+
+.btn-export:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(189, 0, 255, 0.5);
+}
+
 @media (max-width: 768px) {
   .date-inputs {
     flex-direction: column;
