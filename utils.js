@@ -85,19 +85,37 @@ export const formatters = {
   },
 
   formatDate: (date) => {
+    // Ensure we have a valid Date object
+    const dateObj = date instanceof Date ? date : new Date(date);
+    
+    // Check if the date is valid
+    if (isNaN(dateObj.getTime())) {
+      console.warn('Invalid date passed to formatDate:', date);
+      return 'Invalid Date';
+    }
+    
     return new Intl.DateTimeFormat('en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric'
-    }).format(date);
+    }).format(dateObj);
   },
 
   formatTime: (date) => {
+    // Ensure we have a valid Date object
+    const dateObj = date instanceof Date ? date : new Date(date);
+    
+    // Check if the date is valid
+    if (isNaN(dateObj.getTime())) {
+      console.warn('Invalid date passed to formatTime:', date);
+      return 'Invalid Time';
+    }
+    
     return new Intl.DateTimeFormat('en-US', {
       hour: '2-digit',
       minute: '2-digit',
       hour12: true
-    }).format(date);
+    }).format(dateObj);
   },
 
   formatDateTime: (date) => {

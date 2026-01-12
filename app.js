@@ -8,9 +8,16 @@ import { formatters, formatNumber, exportUtils } from './utils.js';
 class WhatsAppAnalyzerApp {
     constructor() {
         this.parsedData = null;
+        this.originalParsedData = null; // Store original unfiltered data
+        this.originalRawText = null; // Store original raw text for re-parsing
         this.analytics = null;
         this.chartBuilder = new ChartBuilder();
         this.charts = {};
+        this.dateFilter = {
+            startDate: null,
+            endDate: null,
+            isActive: false
+        };
 
         this.initializePrivacyModal();
         this.initializeEventListeners();
@@ -86,6 +93,18 @@ class WhatsAppAnalyzerApp {
         if (exportBtn) {
             exportBtn.addEventListener('click', () => this.exportAnalytics());
         }
+
+        // Date filter functionality
+        const applyFilterBtn = document.getElementById('applyFilter');
+        const resetFilterBtn = document.getElementById('resetFilter');
+        
+        if (applyFilterBtn) {
+            applyFilterBtn.addEventListener('click', () => this.applyDateFilter());
+        }
+        
+        if (resetFilterBtn) {
+            resetFilterBtn.addEventListener('click', () => this.resetDateFilter());
+        }
     }
 
     async handleFileSelect(event) {
@@ -124,13 +143,20 @@ class WhatsAppAnalyzerApp {
                 text = await file.text();
             }
 
+            // Store original raw text for filtering and re-parsing
+            this.originalRawText = text;
+
             // Parse chat
             this.parsedData = parser.parse(text);
+            this.originalParsedData = JSON.parse(JSON.stringify(this.parsedData)); // Deep copy
 
             // Validate parsed data
             if (!this.parsedData.messages || this.parsedData.messages.length === 0) {
                 throw new Error('No messages found in the file. Please check the file format.');
             }
+
+            // Initialize date filter inputs with data range
+            this.initializeDateFilterInputs();
 
             // Create analytics
             this.analytics = new WhatsAppAnalytics(this.parsedData);
@@ -744,6 +770,195 @@ class WhatsAppAnalyzerApp {
             alert(message);
         }
     }
+
+    initializeDateFilterInputs() {
+        if (!this.originalParsedData || !this.originalParsedData.messages.length) return;
+
+        const messages = this.originalParsedData.messages;
+        const firstMessage = messages[0];
+        const lastMessage = messages[messages.length - 1];
+
+        const startDateInput = document.getElementById('startDate');
+        const endDateInput = document.getElementById('endDate');
+
+        if (startDateInput && endDateInput) {
+            // Set min and max values to the data range
+            const minDate = this.formatDateForInput(firstMessage.timestamp);
+            const maxDate = this.formatDateForInput(lastMessage.timestamp);
+            
+            startDateInput.min = minDate;
+            startDateInput.max = maxDate;
+            endDateInput.min = minDate;
+            endDateInput.max = maxDate;
+
+            // Set default values to full range
+            startDateInput.value = minDate;
+            endDateInput.value = maxDate;
+        }
+    }
+
+    formatDateForInput(timestamp) {
+        const date = new Date(timestamp);
+        return date.toISOString().split('T')[0];
+    }
+
+    applyDateFilter() {
+        const startDateInput = document.getElementById('startDate');
+        const endDateInput = document.getElementById('endDate');
+
+        if (!startDateInput || !endDateInput || !this.originalParsedData) {
+            this.showError('Date filter inputs not found or no data loaded');
+            return;
+        }
+
+        const startDate = startDateInput.value;
+        const endDate = endDateInput.value;
+
+        if (!startDate || !endDate) {
+            this.showError('Please select both start and end dates');
+            return;
+        }
+
+        if (new Date(startDate) > new Date(endDate)) {
+            this.showError('Start date must be before end date');
+            return;
+        }
+
+        // Update filter state
+        this.dateFilter.startDate = new Date(startDate);
+        this.dateFilter.endDate = new Date(endDate + 'T23:59:59'); // Include full end date
+        this.dateFilter.isActive = true;
+
+        // Apply filter and re-render
+        this.applyFilterToData();
+        
+        this.showLoading();
+        
+        // Destroy old charts
+        this.destroyAllCharts();
+        
+        // Re-create analytics with filtered data
+        this.analytics = new WhatsAppAnalytics(this.parsedData);
+        
+        // Re-render everything
+        this.renderAnalytics();
+        
+        this.hideLoading();
+        
+        console.log(`Applied date filter: ${startDate} to ${endDate}`);
+    }
+
+    resetDateFilter() {
+        // Reset filter state
+        this.dateFilter.startDate = null;
+        this.dateFilter.endDate = null;
+        this.dateFilter.isActive = false;
+
+        // Restore original data
+        this.parsedData = JSON.parse(JSON.stringify(this.originalParsedData));
+
+        this.parsedData = parser.parse(this.originalRawText);
+        
+        // Reset input values to full range
+        this.initializeDateFilterInputs();
+
+        this.showLoading();
+        
+        // Destroy old charts
+        this.destroyAllCharts();
+        
+        // Re-create analytics with original data
+        this.analytics = new WhatsAppAnalytics(this.parsedData);
+        
+        // Re-render everything
+        this.renderAnalytics();
+        
+        this.hideLoading();
+        
+        console.log('Reset date filter to show all data');
+    }
+
+    applyFilterToData() {
+        if (!this.dateFilter.isActive || !this.originalRawText) return;
+
+        // Filter raw text by date range
+        const filteredText = this.filterTextByDateRange(this.originalRawText);
+        
+        // Parse the filtered text
+        this.parsedData = parser.parse(filteredText);
+
+        console.log(`Filtered text and re-parsed: ${this.parsedData.messages.length} messages in filtered range`);
+    }
+
+    filterTextByDateRange(text) {
+        const lines = text.split('\n');
+        const filteredLines = [];
+        
+        let currentMessageDate = null;
+        let isInRange = false;
+
+        for (const line of lines) {
+            let lineDate = null;
+            
+            // Try to extract date using parser's patterns
+            for (const pattern of parser.messagePatterns) {
+                const match = line.match(pattern);
+                if (match) {
+                    // Extract the full date-time string (first capture group)
+                    const dateTimeStr = match[1];
+                    
+                    // Parse the date using parser's existing methods
+                    const { date, time } = parser.parseTimestampString(dateTimeStr);
+                    lineDate = parser.parseTimestamp(date, time);
+                    if (lineDate) {
+                        currentMessageDate = lineDate;
+                        isInRange = this.isDateInRange(lineDate);
+                        break;
+                    }
+                }
+            }
+
+            // Also check system message patterns
+            if (!lineDate) {
+                for (const pattern of parser.systemMessagePatterns) {
+                    const match = line.match(pattern);
+                    if (match) {
+                        const dateTimeStr = match[1];
+                        const { date, time } = parser.parseTimestampString(dateTimeStr);
+                        lineDate = parser.parseTimestamp(date, time);
+                        if (lineDate) {
+                            currentMessageDate = lineDate;
+                            isInRange = this.isDateInRange(lineDate);
+                            break;
+                        }
+                    }
+                }
+            }
+
+            // If this line starts a new message, check if it's in range
+            if (lineDate) {
+                if (isInRange) {
+                    filteredLines.push(line);
+                }
+            } else if (isInRange && currentMessageDate) {
+                // This is a continuation line of a message that's in range
+                filteredLines.push(line);
+            }
+        }
+
+        const filteredText = filteredLines.join('\n');
+        console.log(`Filtered text from ${lines.length} lines to ${filteredLines.length} lines`);
+        
+        return filteredText;
+    }
+
+
+    isDateInRange(date) {
+        if (!this.dateFilter.isActive || !date) return true;
+        
+        return date >= this.dateFilter.startDate && date <= this.dateFilter.endDate;
+    }
+
 }
 
 // Initialize app when DOM is ready
