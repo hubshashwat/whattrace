@@ -10,8 +10,10 @@
   <script
     src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/vanilla-tilt/1.8.0/vanilla-tilt.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" integrity="sha256-6H5VB5QyLldKH9oMFUmjxw2uWpPZETQXpCkBaDjquMs=" crossorigin="anonymous"></script>  
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" integrity="sha256-mMzxeqEMILsTAXYmGPzJtqs6Tn8mtgcdZNC0EVTfOHU=" crossorigin="anonymous"></script>  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"
+    integrity="sha256-6H5VB5QyLldKH9oMFUmjxw2uWpPZETQXpCkBaDjquMs=" crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"
+    integrity="sha256-mMzxeqEMILsTAXYmGPzJtqs6Tn8mtgcdZNC0EVTfOHU=" crossorigin="anonymous"></script>
   <link
     href="https://fonts.googleapis.com/css2?family=Outfit:wght@200;300;400;500;700&family=Space+Grotesk:wght@300;400;600&display=swap"
     rel="stylesheet">
@@ -95,10 +97,10 @@
         <div class="dashboard-head">
           <h1 id="chatTitle">TARGET_CHAT</h1>
           <p id="dateRange" class="glow-text">-- / -- / --</p>
-          
+
           <!-- Date Range Filter -->
           <div class="date-filter-container">
-            <div class="filter-label">📅 TEMPORAL_FILTER</div>
+            <div class="filter-label">📅 Date Filter </div>
             <div class="date-inputs">
               <input type="date" id="startDate" class="date-input" title="Start Date">
               <span class="date-separator">→</span>
@@ -248,16 +250,11 @@
   <div id="privacyModal" class="privacy-modal">
     <div class="modal-overlay"></div>
     <div class="modal-content">
-      <div class="modal-icon">🔒</div>
-      <h2 class="modal-title">Your Privacy Matters</h2>
+      <h2 class="modal-title">Privacy Policy</h2>
       <div class="modal-text">
-        <p><strong>100% Private & Secure</strong></p>
-        <p>All chat analysis happens <strong>locally in your browser</strong>.</p>
-        <p>✨ No data is uploaded to any server<br>
-          ✨ No tracking or analytics<br>
-          ✨ Your conversations stay private</p>
+        <p>Everything runs locally in your browser. Your chat data never leaves your device.</p>
       </div>
-      <button id="acceptPrivacy" class="btn-accept">I Understand</button>
+      <button id="acceptPrivacy" class="btn-accept">Got it</button>
     </div>
   </div>
 

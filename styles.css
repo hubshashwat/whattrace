@@ -1087,71 +1087,62 @@ html {
 .modal-content {
   position: relative;
   z-index: 10001;
-  background: linear-gradient(135deg, rgba(15, 28, 63, 0.95), rgba(26, 15, 48, 0.95));
-  border: 2px solid rgba(0, 243, 255, 0.3);
-  border-radius: 20px;
-  padding: 3rem 2.5rem;
-  max-width: 500px;
+  background: rgba(10, 17, 32, 0.95);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  padding: 2rem 1.5rem;
+  max-width: 380px;
   width: 90%;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5),
-    0 0 40px rgba(0, 243, 255, 0.2);
-  animation: slideUp 0.4s ease-out;
+  animation: slideUp 0.3s ease-out;
   text-align: center;
 }
 
 .modal-icon {
-  font-size: 4rem;
-  margin-bottom: 1rem;
-  filter: drop-shadow(0 0 20px rgba(0, 243, 255, 0.5));
+  font-size: 2rem;
+  margin-bottom: 0.75rem;
 }
 
 .modal-title {
   font-family: 'Space Grotesk', sans-serif;
-  font-size: 1.8rem;
-  color: var(--neon-cyan);
-  margin-bottom: 1.5rem;
-  text-shadow: 0 0 20px rgba(0, 243, 255, 0.5);
-  letter-spacing: 1px;
+  font-size: 1.2rem;
+  color: var(--text-main);
+  margin-bottom: 0.75rem;
+  font-weight: 500;
 }
 
 .modal-text {
-  color: rgba(255, 255, 255, 0.9);
-  line-height: 1.8;
-  margin-bottom: 2rem;
-  font-size: 1rem;
+  color: var(--text-dim);
+  line-height: 1.5;
+  margin-bottom: 1.25rem;
+  font-size: 0.9rem;
 }
 
 .modal-text p {
-  margin: 0.8rem 0;
+  margin: 0;
 }
 
 .modal-text strong {
-  color: white;
-  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 500;
 }
 
 .btn-accept {
-  background: linear-gradient(135deg, var(--neon-cyan), var(--neon-purple));
-  border: none;
-  border-radius: 30px;
-  padding: 1rem 3rem;
-  font-size: 1.1rem;
-  font-weight: 600;
+  background: transparent;
+  border: 1px solid var(--glass-border);
+  border-radius: 6px;
+  padding: 0.6rem 1.5rem;
+  font-size: 0.85rem;
+  font-weight: 500;
   font-family: 'Space Grotesk', sans-serif;
-  color: white;
+  color: var(--text-dim);
   cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 5px 20px rgba(0, 243, 255, 0.3);
-  letter-spacing: 1px;
+  transition: all 0.2s ease;
 }
 
 .btn-accept:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 30px rgba(0, 243, 255, 0.5);
-}
-
-.btn-accept:active {
-  transform: translateY(0);
+  color: var(--text-main);
+  border-color: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.05);
 }
 
 @keyframes fadeIn {
@@ -1295,25 +1286,25 @@ html {
 }
 
 .btn-export {
-  background: linear-gradient(135deg, var(--neon-purple), var(--neon-pink));
-  border: none;
-  border-radius: 8px;
-  padding: 0.6rem 1.5rem;
-  color: white;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  padding: 0.5rem 1rem;
+  color: var(--text-main);
   font-family: 'Space Grotesk', sans-serif;
-  font-size: 0.9rem;
-  font-weight: 600;
+  font-size: 0.8rem;
   cursor: pointer;
-  transition: all 0.3s ease;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  box-shadow: 0 4px 15px rgba(189, 0, 255, 0.3);
+  transition: background 0.2s;
   margin-top: 1rem;
 }
 
 .btn-export:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(189, 0, 255, 0.5);
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.btn-export:disabled {
+  opacity: 0.5;
+  cursor: wait;
 }
 
 @media (max-width: 768px) {
@@ -1321,12 +1312,12 @@ html {
     flex-direction: column;
     align-items: stretch;
   }
-  
+
   .date-separator {
     text-align: center;
     margin: 0.5rem 0;
   }
-  
+
   .date-input {
     min-width: unset;
   }
