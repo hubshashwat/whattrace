@@ -855,8 +855,6 @@ class WhatsAppAnalyzerApp {
         this.dateFilter.isActive = false;
 
         // Restore original data
-        this.parsedData = JSON.parse(JSON.stringify(this.originalParsedData));
-
         this.parsedData = parser.parse(this.originalRawText);
         
         // Reset input values to full range
@@ -900,37 +898,16 @@ class WhatsAppAnalyzerApp {
         for (const line of lines) {
             let lineDate = null;
             
-            // Try to extract date using parser's patterns
-            for (const pattern of parser.messagePatterns) {
+            // Try to extract date using parser's patterns (both message and system patterns)
+            const allPatterns = [...parser.messagePatterns, ...parser.systemMessagePatterns];
+            for (const pattern of allPatterns) {
                 const match = line.match(pattern);
                 if (match) {
-                    // Extract the full date-time string (first capture group)
-                    const dateTimeStr = match[1];
-                    
-                    // Parse the date using parser's existing methods
-                    const { date, time } = parser.parseTimestampString(dateTimeStr);
-                    lineDate = parser.parseTimestamp(date, time);
+                    lineDate = this.parseDateFromMatch(match);
                     if (lineDate) {
                         currentMessageDate = lineDate;
                         isInRange = this.isDateInRange(lineDate);
                         break;
-                    }
-                }
-            }
-
-            // Also check system message patterns
-            if (!lineDate) {
-                for (const pattern of parser.systemMessagePatterns) {
-                    const match = line.match(pattern);
-                    if (match) {
-                        const dateTimeStr = match[1];
-                        const { date, time } = parser.parseTimestampString(dateTimeStr);
-                        lineDate = parser.parseTimestamp(date, time);
-                        if (lineDate) {
-                            currentMessageDate = lineDate;
-                            isInRange = this.isDateInRange(lineDate);
-                            break;
-                        }
                     }
                 }
             }
@@ -952,6 +929,19 @@ class WhatsAppAnalyzerApp {
         return filteredText;
     }
 
+    parseDateFromMatch(match) {
+        try {
+            // Extract the full date-time string (first capture group)
+            const dateTimeStr = match[1];
+            
+            // Parse the date using parser's existing methods
+            const { date, time } = parser.parseTimestampString(dateTimeStr);
+            return parser.parseTimestamp(date, time);
+        } catch (error) {
+            console.warn('Error parsing date from match:', error);
+            return null;
+        }
+    }
 
     isDateInRange(date) {
         if (!this.dateFilter.isActive || !date) return true;
