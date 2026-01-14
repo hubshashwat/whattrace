@@ -1309,16 +1309,25 @@ html {
 
 @media (max-width: 768px) {
   .date-inputs {
-    flex-direction: column;
-    align-items: stretch;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.5rem;
   }
-
-  .date-separator {
-    text-align: center;
-    margin: 0.5rem 0;
-  }
-
+  
   .date-input {
-    min-width: unset;
+    min-width: 120px;
+    flex: 1;
+    max-width: 140px;
+  }
+  
+  .date-separator {
+    margin: 0 0.5rem;
+    align-self: center;
+  }
+  
+  .btn-filter, .btn-filter-reset {
+    flex: 1;
+    min-width: 80px;
+    margin-top: 0.5rem;
   }
 }
