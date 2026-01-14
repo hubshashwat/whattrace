@@ -166,6 +166,20 @@ html {
   border-radius: 4px;
 }
 
+.github-link {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.7);
+  text-decoration: none;
+  padding: 6px 10px;
+  border-radius: 4px;
+  transition: color 0.2s ease;
+}
+
+.github-link:hover {
+  color: #fff;
+}
+
 /* Content Area */
 .content-area {
   flex: 1;
@@ -1313,19 +1327,20 @@ html {
     justify-content: center;
     gap: 0.5rem;
   }
-  
+
   .date-input {
     min-width: 120px;
     flex: 1;
     max-width: 140px;
   }
-  
+
   .date-separator {
     margin: 0 0.5rem;
     align-self: center;
   }
-  
-  .btn-filter, .btn-filter-reset {
+
+  .btn-filter,
+  .btn-filter-reset {
     flex: 1;
     min-width: 80px;
     margin-top: 0.5rem;

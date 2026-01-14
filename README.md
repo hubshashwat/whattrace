@@ -6,10 +6,29 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](http://makeapullrequest.com)
+[![GitHub stars](https://img.shields.io/github/stars/hubshashwat/whattrace?style=social)](https://github.com/hubshashwat/whattrace)
 
-[🚀 Live Demo](#) | [📖 Documentation](#features) | [🤝 Contributing](#-contributing)
+[⭐ Star on GitHub](https://github.com/hubshashwat/whattrace) | [🤝 Contributing](#-contributing)
 
 </div>
+
+---
+
+## 👻 Are You Being Ghosted? Find Out!
+
+Ever wonder if that "busy" excuse is legit? WhatTrace exposes the **cold, hard truth** about your conversations:
+
+### 🔍 **Ghost Detection**
+- See exactly **how long they left you on read** 
+- Track ghosting patterns — is it always after you ask "what are we?"
+- Identify **who ghosts more** in your conversations
+- Get stats on those 24-hour+ silent treatments 💀
+
+### ⏰ **Optimal Time to Text**
+- Discover **when they actually reply fastest** (spoiler: probably not 3 AM)
+- Find their peak response windows by hour
+- Stop texting at times when you'll be left on read
+- **Pro tip**: The data doesn't lie, but your situationship might 😅
 
 ---
 
