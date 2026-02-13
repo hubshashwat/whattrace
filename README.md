@@ -8,6 +8,8 @@
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](http://makeapullrequest.com)
 [![GitHub stars](https://img.shields.io/github/stars/hubshashwat/whattrace?style=social)](https://github.com/hubshashwat/whattrace)
 
+### 🛡️ **Client-Side Only: Your Data Never Leaves Your Device**
+
 [⭐ Star on GitHub](https://github.com/hubshashwat/whattrace) | [🤝 Contributing](#-contributing)
 
 </div>

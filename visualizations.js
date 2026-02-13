@@ -193,7 +193,7 @@ export class ChartBuilder {
      * Create message count comparison (Holographic Doughnut)
      */
     createMessageCountPie(ctx, participants, counts) {
-        const colors = [this.defaultColors.primary, this.defaultColors.secondary, this.defaultColors.accent, this.defaultColors.success];
+        const colors = this.generateGradientColors(participants.length);
 
         return new Chart(ctx, {
             type: 'doughnut',
@@ -620,12 +620,7 @@ export class ChartBuilder {
                 labels: participants,
                 datasets: [{
                     data: counts,
-                    backgroundColor: [
-                        'rgba(0, 243, 255, 0.8)',
-                        'rgba(189, 0, 255, 0.8)',
-                        'rgba(255, 204, 0, 0.8)',
-                        'rgba(0, 255, 163, 0.8)'
-                    ],
+                    backgroundColor: this.generateGradientColors(participants.length),
                     borderWidth: 0,
                     hoverOffset: 15
                 }]
@@ -659,8 +654,18 @@ export class ChartBuilder {
     }
 
     generateGradientColors(count) {
+        const baseHues = [180, 285, 210, 155, 340, 48]; // Cyan, Purple, Blue, Green, Red, Yellow
 
-        // Implementation
+        return Array.from({ length: count }, (_, i) => {
+            let hue;
+            if (i < baseHues.length) {
+                hue = baseHues[i];
+            } else {
+                // If more than base colors, spread them out
+                hue = (i * (360 / count) + 180) % 360;
+            }
+            return `hsla(${hue}, 80%, 60%, 0.8)`;
+        });
     }
 
     static destroyChart(chart) {
