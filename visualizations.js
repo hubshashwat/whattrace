@@ -193,7 +193,8 @@ export class ChartBuilder {
      * Create message count comparison (Holographic Doughnut)
      */
     createMessageCountPie(ctx, participants, counts) {
-        const colors = this.generateGradientColors(participants.length);
+        const colors = this.getParticipantColors(participants);
+        const showLegend = participants.length <= 12; // Hide legend if too many people
 
         return new Chart(ctx, {
             type: 'doughnut',
@@ -212,6 +213,7 @@ export class ChartBuilder {
                 cutout: '70%',
                 plugins: {
                     legend: {
+                        display: showLegend,
                         position: 'right',
                         labels: {
                             color: '#fff',
@@ -568,7 +570,7 @@ export class ChartBuilder {
                 datasets: [{
                     label: 'Initiations',
                     data: counts,
-                    backgroundColor: this.generateGradientColors(participants.length),
+                    backgroundColor: this.getParticipantColors(participants),
                     borderRadius: 10,
                     barPercentage: 0.6
                 }]
@@ -614,7 +616,7 @@ export class ChartBuilder {
                 labels: participants,
                 datasets: [{
                     data: counts,
-                    backgroundColor: this.generateGradientColors(participants.length),
+                    backgroundColor: this.getParticipantColors(participants),
                     borderWidth: 0,
                     hoverOffset: 15
                 }]
@@ -625,6 +627,7 @@ export class ChartBuilder {
                 cutout: '65%',
                 plugins: {
                     legend: {
+                        display: participants.length <= 8, // Stickier limit for doughnut
                         position: 'bottom',
                         labels: {
                             color: '#fff',
@@ -647,18 +650,23 @@ export class ChartBuilder {
         });
     }
 
-    generateGradientColors(count) {
-        const baseHues = [180, 285, 210, 155, 340, 48]; // Cyan, Purple, Blue, Green, Red, Yellow
-
-        return Array.from({ length: count }, (_, i) => {
-            let hue;
-            if (i < baseHues.length) {
-                hue = baseHues[i];
-            } else {
-                // If more than base colors, spread them out
-                hue = (i * (360 / count) + 180) % 360;
+    getParticipantColors(names) {
+        return names.map(name => {
+            let hash = 0;
+            for (let i = 0; i < name.length; i++) {
+                hash = name.charCodeAt(i) + ((hash << 5) - hash);
             }
-            return `hsla(${hue}, 80%, 60%, 0.8)`;
+            // Use golden ratio conjugate to spread hues better
+            const hue = Math.abs(hash * 137.508) % 360;
+            return `hsla(${hue}, 70%, 60%, 0.8)`;
+        });
+    }
+
+    generateGradientColors(count) {
+        // Fallback for non-participant charts
+        return Array.from({ length: count }, (_, i) => {
+            const hue = (i * 137.508) % 360;
+            return `hsla(${hue}, 70%, 60%, 0.8)`;
         });
     }
 
