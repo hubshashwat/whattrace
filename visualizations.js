@@ -568,13 +568,7 @@ export class ChartBuilder {
                 datasets: [{
                     label: 'Initiations',
                     data: counts,
-                    backgroundColor: (context) => {
-                        const ctx = context.chart.ctx;
-                        const gradient = ctx.createLinearGradient(0, 0, 0, 200);
-                        gradient.addColorStop(0, 'rgba(0, 243, 255, 0.8)');
-                        gradient.addColorStop(1, 'rgba(189, 0, 255, 0.4)');
-                        return gradient;
-                    },
+                    backgroundColor: this.generateGradientColors(participants.length),
                     borderRadius: 10,
                     barPercentage: 0.6
                 }]
